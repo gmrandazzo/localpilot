@@ -1,0 +1,40 @@
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+
+[tool.poetry]
+name = "localpilot"
+version = "1.1.0"
+description = "A lightweight local development assistant that provides intelligent code generation, context-aware suggestions, and seamless integration with your development workflow."
+authors = ["Daniel Gross", "Giuseppe Marco Randazzo <gmrandazzo@gmail.com>"]
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/danielgross/localpilot"
+packages = [{include = "localpilot", from = "src"}]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Topic :: Software Development :: Code Generators"
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.32.3"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.4.0"
+pytest-cov = "^4.1.0"
+pre-commit = "^3.3.3"
+tox = "^4.2.3"
+
+[tool.poetry.scripts]
+localpilot = "localpilot.__main__:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

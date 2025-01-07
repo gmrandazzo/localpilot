@@ -1,30 +1,44 @@
 import rumps
 import requests
 import threading
-import subprocess
-import os
+from pathlib import Path
 import sys
-
 import config
+import subprocess
+import tqdm
 
+def download_file(url: str, filename: str):
+    response = requests.get(url, stream=True)
+    total_size = int(response.headers.get('content-length', 0))
+    with open(filename, 'wb') as file, tqdm(
+        desc=filename,
+        total=total_size,
+        unit='iB',
+        unit_scale=True,
+        unit_divisor=1024,
+    ) as progress_bar:
+        for data in response.iter_content(chunk_size=1024):
+            size = file.write(data)
+            progress_bar.update(size)
 
 def setup():
-    if not os.path.exists(config.model_folder):
-        if input(f"Model folder {config.model_folder} does not exist. Create it? (y/n) ").lower() == 'y':
-            os.mkdir(config.model_folder)
-    current = os.listdir(config.model_folder)
+    model_folder = Path(config.model_folder)
+    if not model_folder.exists():
+        if input(f"Model folder {model_folder} does not exist. Create it? (y/n) ").lower() == 'y':
+            model_folder.mkdir(parents=True, exist_ok=True)
+    
     for model in config.models:
         if model == 'default':
             continue
         if config.models[model]['type'] == 'local':
-            if config.models[model]['filename'] not in current:
-                if input(f'Model {model} not found in {config.model_folder}. Would you like to download it? (y/n) ').lower() == 'y':
+            model_file = model_folder / config.models[model]['filename']
+            if not model_file.exists():
+                if input(f'Model {model} not found in {model_folder}. Would you like to download it? (y/n) ').lower() == 'y':
                     url = config.models[model]['url']
                     print(f"Downloading {model} from {url}...")
-                    subprocess.run(['curl', '-L', url, '-o', os.path.join(
-                        config.model_folder, config.models[model]['filename'])])
+                    download_file(url, str(model_file))
             else:
-                print(f"Model {model} found in {config.model_folder}.")
+                print(f"Model {model} found in {model_folder}.")
 
 
 class ModelPickerApp(rumps.App):
@@ -41,7 +55,7 @@ class ModelPickerApp(rumps.App):
 
         self.menu = list(self.menu_items.values())
         self.menu_items[config.models['default']].state = True
-        self.icon = "icon.png"
+        self.icon = str(Path(__file__).parent / "icon.png")
 
     def pick_model(self, sender):
         # Toggle the checked status of the clicked menu item
@@ -70,7 +84,6 @@ class ModelPickerApp(rumps.App):
 
     def run_server(self):
         subprocess.run(['python', 'proxy.py'])
-
 
 if __name__ == '__main__':
     if '--setup' in sys.argv:
